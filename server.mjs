@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import { Parser } from 'json2csv';
+import { determineBotKind } from './check_user_agent.js';  // Import the new function
+import { updateCrawlerUserAgents, updateBotUserAgents } from './generate.js';  // Function to import latest data
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -126,25 +128,18 @@ app.post('/botdetected/json', async (req, res) => {
   try {
     const botInfo = req.body;
 
+    // Check if user-agent is a bot and determine botKind
+    const userAgent = botInfo.browserDetails?.userAgent || "";
+    const botDetection = await determineBotKind(userAgent);
+    botInfo.isBot = botDetection.isBot;
+    botInfo.botKind = botDetection.botKind;
+
     const csvFilePath = path.join(__dirname, 'bot_detections.csv');
     console.log(`CSV file path: ${csvFilePath}`);
 
     const flattenedBotInfo = flattenObject(botInfo);
 
-    // Format detectionTime
-    if (flattenedBotInfo.detectionTime) {
-      const date = new Date(flattenedBotInfo.detectionTime);
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const month = date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
-      const year = date.getUTCFullYear();
-      const hours = String(date.getUTCHours()).padStart(2, '0');
-      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-      const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-      const formattedDate = `${day}/${month}/${year}:${hours}:${minutes}:${seconds} +0000`;
-      flattenedBotInfo.detectionTime = `[${formattedDate}]`;
-    }
-
-    // Define the fields to include
+    // Define the fields to include in the CSV
     const fieldsToInclude = [
       "isBot",
       "botKind",
@@ -168,6 +163,7 @@ app.post('/botdetected/json', async (req, res) => {
       "browserDetails.browserEngineKind",
       "browserDetails.mimeTypesConsistent",
       "browserDetails.evalLength",
+      "browserDetails.inconsistentEval",
       "browserDetails.webGL.vendor",
       "browserDetails.webGL.renderer",
       "browserDetails.windowExternal.present",
@@ -234,7 +230,6 @@ app.post('/botdetected/json', async (req, res) => {
       "notificationPermissions.state"
     ];
 
-    // Filter the flattenedBotInfo to include only the desired fields
     const filteredBotInfo = {};
     fieldsToInclude.forEach(field => {
       if (flattenedBotInfo.hasOwnProperty(field)) {
