@@ -24,12 +24,49 @@ function detectBot(combinedRules) {
       browserEngineKind: getBrowserEngineKind(),
       mimeTypesConsistent: checkMimeTypesConsistency(),
       evalLength: getEvalLength(),
+      inconsistentEval: detectInconsistentEval(),
       webGL: getWebGLInfo(),
       windowExternal: getWindowExternal()
     },
     detectionTime: new Date().toUTCString().replace(" GMT", " +0000"),
     detectorsResults: {},
   };
+
+  function detectInconsistentEval() {
+  let length = eval.toString().length;
+  let userAgent = navigator.userAgent.toLowerCase();
+  let browser;
+
+  if (userAgent.indexOf("edg/") !== -1) {
+    browser = "edge";
+  } else if (
+    userAgent.indexOf("trident") !== -1 ||
+    userAgent.indexOf("msie") !== -1
+  ) {
+    browser = "internet_explorer";
+  } else if (userAgent.indexOf("firefox") !== -1) {
+    browser = "firefox";
+  } else if (
+    userAgent.indexOf("opera") !== -1 ||
+    userAgent.indexOf("opr") !== -1
+  ) {
+    browser = "opera";
+  } else if (userAgent.indexOf("chrome") !== -1) {
+    browser = "chrome";
+  } else if (userAgent.indexOf("safari") !== -1) {
+    browser = "safari";
+  } else {
+    browser = "unknown";
+  }
+
+  if (browser === "unknown") return false;
+
+  return (
+    (length === 33 && !["chrome", "opera", "edge"].includes(browser)) ||
+    (length === 37 && !["firefox", "safari"].includes(browser)) ||
+    (length === 39 && !["internet_explorer"].includes(browser))
+  );
+}
 
   function getComponentState(value) {
     return value !== null && value !== undefined ? 'Success' : 'Failure';
