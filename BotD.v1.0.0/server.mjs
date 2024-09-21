@@ -5,7 +5,10 @@ import { fileURLToPath } from 'url';
 import cors from 'cors';
 import { Parser } from 'json2csv';
 import { determineBotKind } from './check_user_agent.js';  // Import the new function
-import { updateCrawlerUserAgents, updateBotUserAgents } from './generate.js';  // Function to import latest data
+//import { updateCrawlerUserAgents, updateBotUserAgents } from './generate.js';  // Function to import latest data
+//import morganLogger from './middleware/morganLogger.mjs';
+//import rateLimiter from './middleware/rateLimiter.mjs';
+import { logRequest } from './middleware/winstonLogger.js';  // Import the logger
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,6 +20,9 @@ app.use(cors());
 
 // Parse JSON bodies for all routes
 app.use(express.json());
+
+// Middleware for logging requests
+app.use(logRequest);  // Apply the logging middleware
 
 // Serve static files from the current directory
 app.use(express.static('.'));
@@ -73,44 +79,6 @@ app.get('/api/rules', async (req, res) => {
   }
 });
 
-// Helper function to log access details
-async function logAccessDetails(req) {
-  const { method, url, headers } = req;
-  const remoteHost = req.ip;
-  const logname = '-';
-  const user = '-';
-  const time = new Date().toISOString();
-  const request = `"${method} ${url} HTTP/${req.httpVersion}"`;
-  const status = '-';
-  const bytesSent = '-';
-  const referer = headers['referer'] || '-';
-  const userAgent = headers['user-agent'];
-
-  const logEntry = `${remoteHost},${logname},${user},[${time}],${request},${status},${bytesSent},"${referer}","${userAgent}"`;
-
-  const csvFilePath = path.join(__dirname, 'access_logs.csv');
-
-  let fileExists;
-  try {
-    await fs.access(csvFilePath);
-    fileExists = true;
-  } catch {
-    fileExists = false;
-  }
-
-  if (fileExists) {
-    await fs.appendFile(csvFilePath, '\n' + logEntry);
-  } else {
-    const headers = 'Remote Host,Logname,User,Time,Request,Status,Bytes Sent,Referer,User-Agent';
-    await fs.writeFile(csvFilePath, headers + '\n' + logEntry);
-  }
-}
-
-// Middleware to log access details for each request
-app.use(async (req, res, next) => {
-  await logAccessDetails(req);
-  next();
-});
 
 function flattenObject(obj, parent, res = {}) {
   for (let key in obj) {
