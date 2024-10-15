@@ -1,0 +1,27 @@
+/bot-detection-project
+|
+|-- /dist
+|   |-- compiled javascript files
+|-- /src
+|   |-- /detectors          # Holds bot detection logic
+|   |   |-- browser.ts      # Detect browser-based bots
+|   |   |-- headless.ts     # Detect headless browsers
+|   |-- /sources
+|   |   |-- browser.ts
+|   |-- /utils              # Utility functions
+|   |   |-- browser.ts      # Browser-specific utilities
+|   |   |-- logger.ts       # Logging utility
+|   |-- /models             # Machine Learning models (optional)
+|   |   |-- bot-detection.ts
+|   |-- detection.ts        # Orchestrates bot detection
+|   |-- index.ts            # Entry point
+|
+|-- /public
+|   |-- index.html          # Main UI file
+|   |-- /css
+|   |   |-- style.css       # Styles for the page
+|
+|-- /tests                  # Test cases
+|-- package.json            # Project dependencies
+|-- tsconfig.json           # TypeScript config
+|-- README.md               # Project documentation
